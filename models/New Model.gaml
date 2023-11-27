@@ -11,7 +11,7 @@ global {
 	
 	//Check if we use simple data or more complex roads
 	file shape_file_roads <- file("../includes/bbbike/roadsTS.shp");
-	file shape_file_nodes <- file("../includes/bbbike/nodeTS.shp");
+	file shape_file_nodes <- file("../includes/bbbike/nodes.shp");
 	geometry shape <- envelope(shape_file_roads) + 50.0;
 	graph road_network;
 	int nb_people <- 200;
@@ -19,11 +19,7 @@ global {
 	init {
 	//create the intersection and check if there are traffic lights or not by looking the values inside the type column of the shapefile and linking
 	// this column to the attribute is_traffic_signal. 
-		create intersection from: shape_file_nodes with: [is_traffic_signal::string(read("type"))]{
-			if( is_traffic_signal ="traffic_singals"){
-				
-			}
-		}
+		create intersection from: shape_file_nodes with: [is_traffic_signal::(read("type") = "traffic_singals")];
 
 		//create road agents using the shapefile and using the oneway column to check the orientation of the roads if there are directed
 		create road from: shape_file_roads with: [lanes::int(read("lanes")), oneway::string(read("oneway"))] {
