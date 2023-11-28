@@ -14,7 +14,7 @@ global {
 	file shape_file_nodes <- file("../includes/bbbike/nodes.shp");
 	geometry shape <- envelope(shape_file_roads) + 50.0;
 	graph road_network;
-	int nb_people <- 200;
+	int nb_people <- 100;
 
 	init {
 	//create the intersection and check if there are traffic lights or not by looking the values inside the type column of the shapefile and linking
