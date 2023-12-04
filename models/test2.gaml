@@ -18,7 +18,7 @@ global {
 	file shape_file_nodes <- file("../includes/bbbike/nodes.shp");
 	geometry shape <- envelope(shape_file_roads) + 50.0;
 	graph road_network;
-	int num_car <- 100;
+	int num_car <- 500;
 	float lane_width <- 2.0;
 
 	init {
@@ -74,14 +74,18 @@ global {
 		ask intersection where each.is_traffic_signal {
 			do initialize;
 		}
-
-	}
-	reflex add_car {
-		create car number: 5 with: (location: intersection[23].location, target: intersection[29]);
-		create car number: 10 with: (location: intersection[5].location, target: intersection[29]);
-		create car number: 10 with: (location: intersection[5].location, target: intersection[22]);
-		create car number: 10 with: (location: intersection[5].location, target: intersection[1]);
-		create car number: 5 with: (location: intersection[23].location, target: intersection[1]);
+	list<intersection> start <- intersection where (each.name="intersection5" or each.name="intersection23" or each.name="intersection29" or each.name="intersection24");
+	list<intersection> end <- intersection where (each.name="intersection5" or each.name="intersection19" or each.name="intersection22" or each.name="intersection1");
+	
+		create car number: num_car with:(target :one_of(end)) {
+			start_car <- one_of(start);
+			end_car <- one_of(end);
+			location<- any_location_in(start_car);
+		}
+//		create car number: 10 with: (location: intersection[5].location, target: intersection[29]);
+//		create car number: 10 with: (location: intersection[5].location, target: intersection[22]);
+//		create car number: 10 with: (location: intersection[5].location, target: intersection[1]);
+//		create car number: 5 with: (location: intersection[23].location, target: intersection[1]);
 
 	}
 
@@ -184,26 +188,39 @@ species road skills: [skill_road] {
 //People species that will move on the graph of roads to a target and using the driving skill
 species car skills: [advanced_driving] {
 	rgb color <- rnd_color(255); //rnd_color(255);
+	intersection start_car <- nil;
+	intersection end_car <- nil;
 	intersection target;
+	
 		
 	init {
 		vehicle_length <- 3.8 #m;
 		//car occupies 2 lanes
 		num_lanes_occupied <-1;
 		max_speed <-150 #km / #h;
+		max_acceleration <- 5 / 3.6;
 				
-		proba_block_node <- 1.0;
-		proba_respect_priorities <- 1.0;
+		right_side_driving <- true;
+		proba_lane_change_up <- 0.1 + (rnd(500) / 500);
+		proba_lane_change_down <- 0.5 + (rnd(500) / 500);		
+		proba_block_node <- 0.0;
+		proba_respect_priorities <- 1.0 - rnd(200 / 1000);
 		proba_respect_stops <- [1.0];
 		proba_use_linked_road <- 0.0;
-
+		security_distance_coeff <- 5 / 9 * 3.6 * (1.5 - rnd(1000) / 1000);
+		speed_coeff <- 1.2 - (rnd(400) / 1000);
+		
+//		proba_lane_change_up <-1.0;
+		
 		lane_change_limit <- 2;
 		linked_lane_limit <- 0;
 		
 	}
 	
 	reflex time_to_go when: final_target = nil {
-	do compute_path graph: road_network target: target; 
+//	list<intersection> end <- [ intersection[19], intersection[22],intersection[1]];
+	do compute_path graph: road_network target: target;
+	
 	}
 
 	reflex move when: final_target != nil {
