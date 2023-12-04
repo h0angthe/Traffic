@@ -88,7 +88,7 @@ species intersection skills: [skill_road_node] {
 	list<road> ways2;
 	bool is_green;
 	rgb color_fire;
-
+	
 	action initialize {
 		if (is_traffic_signal) {
 			do compute_crossing;
@@ -106,7 +106,6 @@ species intersection skills: [skill_road_node] {
 	action compute_crossing {
 		if (length(roads_in) >= 2) {
 			road rd0 <- road(roads_in[0]);
-			write(rd0);
 			list<point> pts <- rd0.shape.points;
 			float ref_angle <- float(last(pts) direction_to rd0.location);
 			loop rd over: roads_in {
@@ -155,6 +154,10 @@ species intersection skills: [skill_road_node] {
 		}
 
 	}
+//	reflex status{
+//		write("rd0 ");
+//		write(road.rd0);
+//	}
 
 	aspect default {
 		if (display3D) {
@@ -211,18 +214,18 @@ species people skills: [advanced_driving] {
 
 	reflex move when: current_path != nil and final_target != nil {
 		do drive;
-		if (final_target != nil) {
-			if real_speed < 5 #km / #h {
-				counter_stucked <- counter_stucked + 1;
-				if (counter_stucked mod threshold_stucked = 0) {
-					proba_use_linked_road <- min([1.0, proba_use_linked_road + 0.1]);
-				}
-	
-			} else {
-				counter_stucked <- 0;
-				proba_use_linked_road <- 0.0;
-			}
-		}
+//		if (final_target != nil) {
+//			if real_speed < 5 #km / #h {
+//				counter_stucked <- counter_stucked + 1;
+//				if (counter_stucked mod threshold_stucked = 0) {
+//					proba_use_linked_road <- min([1.0, proba_use_linked_road + 0.1]);
+//				}
+//	
+//			} else {
+//				counter_stucked <- 0;
+//				proba_use_linked_road <- 0.0;
+//			}
+//		}
 	}
 
 	aspect default {
