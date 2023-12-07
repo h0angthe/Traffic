@@ -16,7 +16,7 @@ global {
 	//Check if we use simple data or more complex roads
 	file shape_file_roads <- file("../includes/bbbike/roadsTS.shp");
 	file shape_file_nodes <- file("../includes/bbbike/nodes.shp");
-	geometry shape <- envelope(shape_file_roads) + 50.0;
+	geometry shape <- envelope(shape_file_nodes) + 50.0;
 	graph road_network;
 	int num_car <- 500;
 	float lane_width <- 2.0;
@@ -67,7 +67,9 @@ global {
 	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[5],intersection[13]]));
 	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[13],intersection[14]]));
 	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[9],intersection[22]]));
-
+	
+	map general_speed_map <- road as_map (each::(each.shape.perimeter / each.maxspeed));
+	
 	road_network <- as_driving_graph(road,intersection);
 
 		//initialize the traffic light
@@ -78,9 +80,30 @@ global {
 	list<intersection> end <- intersection where (each.name="intersection5" or each.name="intersection19" or each.name="intersection22" or each.name="intersection1");
 	
 		create car number: num_car with:(target :one_of(end)) {
-			start_car <- one_of(start);
-			end_car <- one_of(end);
-			location<- any_location_in(start_car);
+		vehicle_length <- 3.8 #m;
+		//car occupies 2 lanes
+		num_lanes_occupied <-1;
+		max_speed <-150 #km / #h;
+		max_acceleration <- 5 / 3.6;
+				
+		right_side_driving <- true;
+		proba_lane_change_up <- 0.1 + (rnd(500) / 500);
+		proba_lane_change_down <- 0.5 + (rnd(500) / 500);		
+		proba_block_node <- 0.0;
+		proba_respect_priorities <- 1.0 - rnd(200 / 1000);
+		proba_respect_stops <- [1.0];
+		proba_use_linked_road <- 0.0;
+		security_distance_coeff <- 5 / 9 * 3.6 * (1.5 - rnd(1000) / 1000);
+		speed_coeff <- 1.2 - (rnd(400) / 1000);
+		
+//		proba_lane_change_up <-1.0;
+		
+		lane_change_limit <- 2;
+		linked_lane_limit <- 0;
+		
+		start_car <- one_of(start);
+		end_car <- one_of(end);
+		location<- any_location_in(start_car);
 		}
 //		create car number: 10 with: (location: intersection[5].location, target: intersection[29]);
 //		create car number: 10 with: (location: intersection[5].location, target: intersection[22]);
@@ -119,10 +142,10 @@ species intersection skills: [skill_road_node] {
 	action compute_crossing {
 		if (length(roads_in) >= 2) {
 			road rd0 <- road(roads_in[0]);
-			list<point> pts <- rd0.shape.points;
+			list<intersection> pts <- [intersection[27],intersection[28]];
 			float ref_angle <- last(pts) direction_to rd0.location;
 			loop rd over: roads_in {
-				list<point> pts2 <- road(rd).shape.points;
+				list<intersection> pts2 <- [intersection[25],intersection[26]];
 				float angle_dest <- last(pts2) direction_to rd.location;
 				float ang <- abs(angle_dest - ref_angle);
 				if (ang > 45 and ang < 135) or (ang > 225 and ang < 315) {
@@ -192,31 +215,6 @@ species car skills: [advanced_driving] {
 	intersection end_car <- nil;
 	intersection target;
 	
-		
-	init {
-		vehicle_length <- 3.8 #m;
-		//car occupies 2 lanes
-		num_lanes_occupied <-1;
-		max_speed <-150 #km / #h;
-		max_acceleration <- 5 / 3.6;
-				
-		right_side_driving <- true;
-		proba_lane_change_up <- 0.1 + (rnd(500) / 500);
-		proba_lane_change_down <- 0.5 + (rnd(500) / 500);		
-		proba_block_node <- 0.0;
-		proba_respect_priorities <- 1.0 - rnd(200 / 1000);
-		proba_respect_stops <- [1.0];
-		proba_use_linked_road <- 0.0;
-		security_distance_coeff <- 5 / 9 * 3.6 * (1.5 - rnd(1000) / 1000);
-		speed_coeff <- 1.2 - (rnd(400) / 1000);
-		
-//		proba_lane_change_up <-1.0;
-		
-		lane_change_limit <- 2;
-		linked_lane_limit <- 0;
-		
-	}
-	
 	reflex time_to_go when: final_target = nil {
 //	list<intersection> end <- [ intersection[19], intersection[22],intersection[1]];
 	do compute_path graph: road_network target: target;
@@ -224,6 +222,7 @@ species car skills: [advanced_driving] {
 	}
 
 	reflex move when: final_target != nil {
+		
 		do drive;
 		//if arrived at target, kill it and create a new car
 		if (final_target = nil) {
