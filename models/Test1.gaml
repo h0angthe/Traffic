@@ -109,10 +109,11 @@ global {
 
 	}
 	
+	
 	 reflex find_closest_neighbours {
     	ask intersection {
     		if(closest_node !=[]){
-      		intersection closest_neighbour <- min_of(closest_node, each != self and each distance_to self < 2);
+      		list<intersection> closest_neighbour <- closest_node closest_to(self,3);
       		write "Closest neighbour of " + self + " is " + closest_neighbour;
       	}else{
       		write "no "; 
