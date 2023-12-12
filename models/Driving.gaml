@@ -10,243 +10,284 @@
 model Driving
 
 global {
-
-	file shapefile_roads <- file("../includes/bbbike/roadsTS.shp");
-	file shapefile_buildings <- file("../includes/bbbike/buildingsTS1.shp");
-	geometry shape <- envelope(shapefile_buildings);
+	bool display3D<- false;
+	file shape_file_roads <- file("../includes/HNTraffic/HanoiRoads.shp");
+	file shape_file_nodes <- file("../includes/HNTraffic/HanoiNodes.shp");
+	
+	geometry shape <- envelope(shape_file_roads) + 50.0;
+	
 	graph road_network;
-	map<road,float> current_weights;
-	
-	
-	float catastrophe_distance <- 100.0;
-	float proba_detect_hazard <- 0.2;
-	float proba_detect_other_escape <- 0.01;
-	float other_distance <- 10.0;
-//	point start1 <- {156.57607030107175,587.3316504620947};
-	point start1 <- {899.4213945600786,472.03025399823673};
-	map<string, rgb> building_color_map <- ["RS"::#white, "RM"::rgb(125, 125, 125), "RL"::rgb(75, 75, 75), "OS"::rgb(250, 226, 59), "OM"::rgb(255, 147, 0), "OL"::rgb(215, 95, 0)];
-	map<string,rgb> color_per_mode <- ["moving"::#green, "stop"::#red, "walk"::rgb(161,196,90), "pev"::#magenta];
+	int num_car <- 500;
+	float lane_width <- 2.0;
 	init {
-		create road from: shapefile_roads with: [classe::string(get("Classe"))]{
-			if classe="Route"{
-				weight <- 1.0;
+	//create the intersection and check if there are traffic lights or not by looking the values inside the type column of the shapefile and linking
+	// this column to the attribute is_traffic_signal. 
+		create intersection from: shape_file_nodes with: [is_traffic_signal::(read("type") = "traffic_signals")];
+
+		//create road agents using the shapefile and using the oneway column to check the orientation of the roads if there are directed
+		create road from: shape_file_roads with: [lanes::int(read("lanes")), oneway::string(read("oneway"))] {
+			geom_display <- shape + (2.5 * lanes);
+			maxspeed <- (lanes = 1 ? 30.0 : (lanes = 2 ? 50.0 : 70.0)) °km / °h;
+			switch oneway {
+				match "no" {
+					create road {
+						lanes <- max([1, int(myself.lanes / 2.0)]);
+						shape <- polyline(reverse(myself.shape.points));
+						maxspeed <- myself.maxspeed;
+						geom_display <- myself.geom_display;
+						linked_road <- myself;
+						myself.linked_road <- self;
+					}
+
+					lanes <- int(lanes / 2.0 + 0.5);
+				}
+				match "-1" {
+					shape <- polyline(reverse(shape.points));
+				}
+
 			}
+
 		}
-//		create catastrophe;
-		create buildings from: shapefile_buildings;
-//		create lanes from: shapefile_lanes;
+
+		map general_speed_map <- road as_map (each::(each.shape.perimeter / each.maxspeed));
+
+		//creation of the road network using the road and intersection agents
+		road_network <- (as_driving_graph(road, intersection)) with_weights general_speed_map;
+
+		//initialize the traffic light
+		ask intersection {
+			do initialize;
+		}
 		
-		//at the begining of the simulation, we add to the people agent the desire to go to their target.
-		create people number: 20{
-			location <- any_location_in(one_of(start1));
-			if the_target = location or the_target = nil{
-				the_target <- nil;
-			}
-			do add_desire(at_target);
-			
-		 	//the agent has also the desire that there is no catastrophe (we set the piority of this desire to 0 as it is a general desire)
-			do add_desire(nonCatastrophe ,0.0);
-			
-			// we give the agent a random charisma and receptivity (built-in variables linked to the emotions)
-			charisma<-rnd(1.0);
-			receptivity<-rnd(1.0);
-			
-			if(flip(0.9)){
-				fearful<-true;
-			}else{
-				fearful <- false;
-			}
-      	}
-      	road_network <- as_edge_graph(road);
-      	current_weights <- road as_map (each::each.shape.perimeter);
-	}
+		list<intersection> start <- intersection where (each.name="intersection15" or each.name="intersection52" or each.name="intersection89");
+		list<intersection> end <- intersection where (each.name="intersection31" or each.name="intersection43" or each.name="intersection20" or each.name="intersection19");
 	
-	reflex update_speeds when: every(10#cycle){
-		current_weights <- road as_map (each::each.shape.perimeter / each.speed_coeff);
-		road_network <- road_network with_weights current_weights;
+		create car number: num_car with:(target :one_of(end)) {
+		vehicle_length <- 3.8 #m;
+		//car occupies 2 lanes
+		num_lanes_occupied <-1;
+		max_speed <-150 #km / #h;
+		max_acceleration <- 5 / 3.6;
+				
+		right_side_driving <- true;
+		proba_lane_change_up <- 0.1 + (rnd(500) / 500);
+		proba_lane_change_down <- 0.5 + (rnd(500) / 500);		
+		proba_block_node <- 0.0;
+		proba_respect_priorities <- 1.0 - rnd(200 / 1000);
+		proba_respect_stops <- [1.0];
+		proba_use_linked_road <- 0.0;
+		security_distance_coeff <- 5 / 9 * 3.6 * (1.5 - rnd(1000) / 1000);
+		speed_coeff <- 1.2 - (rnd(400) / 1000);
+		
+//		proba_lane_change_up <-1.0;
+		
+		lane_change_limit <- 2;
+		linked_lane_limit <- 0;
+		
+		start_car <- one_of(start);
+		end_car <- one_of(end);
+		location<- any_location_in(start_car);
+		}
+
 	}
-	
-	reflex stop_sim when: empty(people) {
-		do pause;
-	}
+
 }
- 
-species people skills: [moving] control: simple_bdi{
-	point target;
-	float speed <- 30 #km/#h;
-	rgb color <- #blue;
-	bool escape_mode <- false;
-	bool fearful;
-	point the_target <- nil;
-	
-	//in order to simplify the model we define  4 desires as variables
-	predicate at_target <- new_predicate("at_target");
-	predicate in_shelter <- new_predicate("shelter");
-	predicate has_target <- new_predicate("has target");
-	predicate has_shelter <- new_predicate("has shelter");
+species intersection skills: [skill_road_node] {
+	bool is_traffic_signal;
+	list<list> stop;
+	int time_to_change <- 100;
+	int counter <- rnd(time_to_change);
+	list<road> ways1;
+	list<road> ways2;
+	bool is_green;
+	rgb color_fire;
 
-    //we give them as well 2 beliefs as variables
-	predicate catastropheP <- new_predicate("catastrophe");
-	predicate nonCatastrophe <- new_predicate("catastrophe",false);
-	
-	//at last we define 2 emotion linked to the knowledge of the catastrophe
-	emotion fearConfirmed <- new_emotion("fear_confirmed",catastropheP);
-	emotion fear <- new_emotion("fear",catastropheP);
-	
-	bool noTarget<-true;
-	
-	//we set this built-in variable to true to use the emotional process
-	bool use_emotions_architecture <- true;
+	action initialize {
+		if (is_traffic_signal) {
+			do compute_crossing;
+			stop << [];
+			if (flip(0.5)) {
+				do to_green;
+			} else {
+				do to_red;
+			}
 
-    //if the agent perceive that their is something that is not normal (a hazard), it has a probability proba_detect_hazard to suppose (add to its unertainty base) that there is a catastrophe occuring
-//	perceive target:hazard in: hazard_distance when: not escape_mode and flip(proba_detect_hazard){
-//		focus id:"catastrophe" is_uncertain: true;
-//		ask myself {
-//			if(fearful){
-//				do to_escape_mode;
-//			}else{
-//				color<-#green;
-//			}
-//		}
-//	}
+		}
 
-//	//if the agent perceive the catastrophe, it adds a belief about it and pass in escape mode
-//	perceive target:catastrophe in:catastrophe_distance{
-//		focus id:"catastrophe";
-//		ask myself{
-//			if(not escape_mode){
-//				do to_escape_mode;
-//			}
-//		}
-//	}
-
-	//if the agent perceives other people agents in their neighborhood that have fear, it can be contaminate by this emotion
-	perceive target:people in: other_distance when: not escape_mode {
-		emotional_contagion emotion_detected:fearConfirmed when: fearful;
-		emotional_contagion emotion_detected:new_emotion("fear") charisma: charisma receptivity:receptivity;
-		emotional_contagion emotion_detected:fearConfirmed emotion_created:fear;
 	}
-	emotion joy <- nil;
-	
-	
-	perceive target:people in: other_distance{
-		emotional_contagion emotion_detected: joy;
-		emotional_contagion emotion_detected:fearConfirmed emotion_created:fear;
+
+	action compute_crossing {
+		if (length(roads_in) >= 2) {
+			road rd0 <- road(roads_in[0]);
+			list<point> pts <- rd0.shape.points;
+			float ref_angle <- float(last(pts) direction_to rd0.location);
+			loop rd over: roads_in {
+				list<point> pts2 <- road(rd).shape.points;
+				float angle_dest <- float(last(pts2) direction_to rd.location);
+				float ang <- abs(angle_dest - ref_angle);
+				if (ang > 45 and ang < 135) or (ang > 225 and ang < 315) {
+					ways2 << road(rd);
+				}
+
+			}
+
+		}
+
+		loop rd over: roads_in {
+			if not (rd in ways2) {
+				ways1 << road(rd);
+			}
+
+		}
+
 	}
-	
-	//if the agent has a fear confirmed, it has the desire to go to a shelter
-	rule emotion:fearConfirmed remove_intention: at_target new_desire:in_shelter strength:5.0;
-	
-	//if the agent has the belief that there is a a catastrophe,  it has the desire to go to a shelter
-	rule belief:new_predicate("catastrophe") remove_intention:at_target new_desire:in_shelter strength:5.0;
-	
-	rule emotion:new_emotion("fear" ,new_predicate("catastrophe")) new_desire:in_shelter remove_intention:at_target when: fearful strength:5.0;
-	
-	//normal move plan
-	plan normal_move intention: at_target  {
-		if (target = nil) {
-			target <- any_location_in(one_of(road));
+
+	action to_green {
+		stop[0] <- ways2;
+		color_fire <- #green;
+		is_green <- true;
+	}
+
+	action to_red {
+		stop[0] <- ways1;
+		color_fire <- #red;
+		is_green <- false;
+	}
+
+	reflex dynamic_node when: is_traffic_signal {
+		counter <- counter + 1;
+		if (counter >= time_to_change) {
+			counter <- 0;
+			if is_green {
+				do to_red;
+			} else {
+				do to_green;
+			}
+
+		}
+
+	}
+
+	aspect default {
+		if (display3D) {
+			if (is_traffic_signal) {
+				draw box(1, 1, 10) color: #black;
+				draw sphere(3) at: {location.x, location.y, 10} color: color_fire;
+			}
 		} else {
-			do goto target: target on: road_network move_weights: current_weights recompute_path: false;
-			if (target = location)  {
-				target <- nil;
-				noTarget<-true;
+			if (is_traffic_signal) {
+				draw circle(5) color: color_fire;
 			}
+		}	
+	}
+}
+
+//species that will represent the roads, it can be directed or not and uses the skill skill_road
+species road skills: [skill_road] {
+	int lanes;
+	string oneway;
+	geometry geom_display;
+
+	aspect default {
+		if (display3D) {
+			draw geom_display color: #lightgray;
+		} else {
+			draw shape color: #white end_arrow: 5;
+		}
+		
+	}
+
+}
+
+//People species that will move on the graph of roads to a target and using the driving skill
+species car skills: [advanced_driving] {
+	rgb color <- rnd_color(255); //rnd_color(255);
+	intersection start_car <- nil;
+	intersection end_car <- nil;
+	intersection target;
+	
+	reflex time_to_go when: final_target = nil {
+//	list<intersection> end <- [ intersection[19], intersection[22],intersection[1]];
+	do compute_path graph: road_network target: target;
+	
+	}
+
+	reflex move when: final_target != nil {
+		
+		do drive;
+		//if arrived at target, kill it and create a new car
+		if (final_target = nil) {
+			do unregister;
+			do die;
 		}
 	}
-	
-	//fast evacuation plan in case where the agent has a fear confirmed
-	plan evacuationFast intention: in_shelter emotion: fearConfirmed priority:2 {
-		color <- #yellow;
-		speed <- 60 #km/#h;
-		if (target = nil or noTarget) {
-			target <- (buildings with_min_of (each.location distance_to location)).location;
-			noTarget <- false;
+
+	point compute_position {
+		if (current_road != nil) {
+			float dist <- (road(current_road).num_lanes - current_lane -
+				mean(range(num_lanes_occupied - 1)) - 0.5) * lane_width;
+			if violating_oneway {
+				dist <- -dist;
+			}
+		 	point shift_pt <- {cos(heading + 90) * dist, sin(heading + 90) * dist};	
+		
+			return location + shift_pt;
+		} else {
+			return {0, 0};
 		}
-		else  {
-			do goto target: target on: road_network move_weights: current_weights recompute_path: false;
-			if (target = location)  {
-				do die;
-			}		
-		}
-	}	
-	
-	//normal evacuation plan
-	plan evacuation intention: in_shelter finished_when: has_emotion(fearConfirmed){
-		color <-#darkred;
-		if (target = nil or noTarget) {
-			target <- (buildings with_min_of (each.location distance_to location)).location;
-			noTarget <- false;
-		}
-		else  {
-			do goto target: target on: road_network move_weights: current_weights recompute_path: false;
-			if (target = location)  {
-				do die;
-			}		
-		}
-	}
-	
-	action to_escape_mode {
-		escape_mode <- true;
-		color <- #darkred;
-		target <- nil;	
-		noTarget <- true;
-		do remove_intention(at_target, true);
 	}
 	
 	
 	aspect default {
-		draw triangle(30) rotate: heading + 90 color: color;
+		if (current_road != nil) {
+			point pos <- compute_position();
+				draw rectangle(vehicle_length, lane_width * num_lanes_occupied) 
+				at: pos color: color rotate: heading border: #black;
+			draw triangle(lane_width * num_lanes_occupied) 
+				at: pos color: #white rotate: heading + 90 ;
+		}
 	}
-}
+ }
 
-species road {
-	string classe;
-	float weight <- 1.0;
-	float capacity <- 1 + shape.perimeter/50;
-	int nb_people <- 0 update: length(people at_distance 1);
-	float speed_coeff <- 1.0 update:  exp(-nb_people/capacity) min: 0.1;
-	
-	aspect default {
-		draw shape color: #black end_arrow: 5;
-	}
-}
-
-species buildings {
-	rgb color <- #gray;
-
-	aspect base {
-		draw shape color: color;
-	}
-
-}
-
-species lanes {
-	rgb color <- #gray;
-
-	aspect base {
-		draw shape color: color;
-	}
-
-}
-//species catastrophe{
-//	init{
-//		location <- first(shelter).location;
+experiment HanoiCity type: gui {
+//	parameter "if true, 3D display, if false 2D display:" var: display3D category: "GIS";
+//	
+//	action _init_{
+//		create simulation with:[
+//			shape_file_roads::file("../includes/roads.shp"), 
+//			shape_file_nodes::file("../includes/nodes.shp"),
+//			nb_people::200
+//		];
 //	}
-//	aspect default{
-//		draw circle(catastrophe_distance) color: rgb(#gamared,0.4) border:#gamared depth:10;
+	output synchronized: true {
+		display city type: 3d background: #gray {
+			species road ;
+			species intersection ;
+			species car ;
+		}
+	}
+
+}
+
+//experiment experiment_ring type: gui {
+//	parameter "if true, 3D display, if false 2D display:" var: display3D category: "GIS";
+//	
+//	action _init_{
+//		create simulation with:[
+//			shape_file_roads::file("../includes/RoadCircleLanes.shp"), 
+//			shape_file_nodes::file("../includes/NodeCircleLanes.shp"),
+//			nb_people::20
+//		];
 //	}
+//	output {
+//		display carte_principale type: opengl synchronized: true background: #gray{
+//			species road ;
+//			species intersection ;
+//			species people ;
+//		}
+//
+//	}
+//
 //}
 
-experiment main type: gui {
-//	float minimum_cycle_duration <- 0.02;
-	output {
-		display map type: 3d{
-			species buildings refresh: false;
-			species road refresh: false;
-			species lanes;
-			species people;
-//			species catastrophe;
-		}
-	}
-}
+
