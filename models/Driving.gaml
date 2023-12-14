@@ -17,7 +17,7 @@ global {
 	geometry shape <- envelope(shape_file_roads) + 50.0;
 	
 	graph road_network;
-	int num_car <- 500;
+	int num_car <- 1000;
 	float lane_width <- 2.0;
 	init {
 	//create the intersection and check if there are traffic lights or not by looking the values inside the type column of the shapefile and linking
@@ -26,6 +26,7 @@ global {
 
 		//create road agents using the shapefile and using the oneway column to check the orientation of the roads if there are directed
 		create road from: shape_file_roads with: [lanes::int(read("lanes")), oneway::string(read("oneway"))] {
+			road_near <- road where (self != self);
 			geom_display <- shape + (2.5 * lanes);
 			maxspeed <- (lanes = 1 ? 30.0 : (lanes = 2 ? 50.0 : 70.0)) °km / °h;
 			switch oneway {
@@ -87,9 +88,26 @@ global {
 		start_car <- one_of(start);
 		end_car <- one_of(end);
 		location<- any_location_in(start_car);
+		
+		ask road {
+		list<road> acts <- road at_distance 0;
+		write "Closest neighbour of " + self + " is " + acts;
+		q[] <- acts;
+		}
+//		loop c over: road {
+//			map<road, float> acts <- (c at_distance 0 ) as_map (each::each = exit ? 1.0 : 0.0);
+//			write "Closest neighbour of " + self + " is " + acts;
+//		}
 		}
 
 	}
+//	reflex find_road_near {
+//		ask road {
+//		list<road> acts <- road at_distance 0;
+//		write "Closest neighbour of " + self + " is " + acts;
+//		}
+//
+//	}
 
 }
 species intersection skills: [skill_road_node] {
@@ -184,6 +202,7 @@ species intersection skills: [skill_road_node] {
 
 //species that will represent the roads, it can be directed or not and uses the skill skill_road
 species road skills: [skill_road] {
+	list<road> road_near <- nil;
 	int lanes;
 	string oneway;
 	geometry geom_display;
@@ -205,6 +224,7 @@ species car skills: [advanced_driving] {
 	intersection start_car <- nil;
 	intersection end_car <- nil;
 	intersection target;
+	map<road, map<road,float>> q;
 	
 	reflex time_to_go when: final_target = nil {
 //	list<intersection> end <- [ intersection[19], intersection[22],intersection[1]];
