@@ -47,6 +47,14 @@ global {
 				}
 
 			}
+//			loop i over: road{
+//			loop j over: road{
+//				if(i.source_node = j.target_node){
+//					list<road> acts1 <- i;
+//					write "Closest neighbour of " + self + " is " + acts1;
+//				}
+//			}
+//		}
 
 		}
 
@@ -89,15 +97,19 @@ global {
 		end_car <- one_of(end);
 		location<- any_location_in(start_car);
 		
-		ask road {
-		list<road> acts <- road at_distance 0;
-		write "Closest neighbour of " + self + " is " + acts;
-		q[] <- acts;
-		}
-//		loop c over: road {
-//			map<road, float> acts <- (c at_distance 0 ) as_map (each::each = exit ? 1.0 : 0.0);
-//			write "Closest neighbour of " + self + " is " + acts;
+	
+//		loop i over: road{
+//			loop j over: road{
+//				if(i.source_node = j.target_node){
+//					map<road,float> acts <- i;
+//					q[i]<-acts;
+//					write "Closest neighbour of " + self + " is " + acts;
+//				}
+//			}
 //		}
+
+		
+		
 		}
 
 	}
@@ -233,6 +245,8 @@ species car skills: [advanced_driving] {
 	}
 
 	reflex move when: final_target != nil {
+		
+//		map<road,float> actions <- q[start_car];
 		
 		do drive;
 		//if arrived at target, kill it and create a new car
