@@ -17,8 +17,9 @@ global {
 	geometry shape <- envelope(shape_file_roads) + 50.0;
 	
 	graph road_network;
-	int num_car <- 1000;
+	int num_car <- 100;
 	float lane_width <- 2.0;
+	list<intersection> end;
 	init {
 	//create the intersection and check if there are traffic lights or not by looking the values inside the type column of the shapefile and linking
 	// this column to the attribute is_traffic_signal. 
@@ -69,7 +70,7 @@ global {
 		}
 		
 		list<intersection> start <- intersection where (each.name="intersection15" or each.name="intersection52" or each.name="intersection89");
-		list<intersection> end <- intersection where (each.name="intersection31" or each.name="intersection43" or each.name="intersection20" or each.name="intersection19");
+		 end <- intersection where (each.name="intersection31" or each.name="intersection43" or each.name="intersection20" or each.name="intersection19");
 	
 		create car number: num_car with:(target :one_of(end)) {
 		vehicle_length <- 3.8 #m;
@@ -98,18 +99,21 @@ global {
 		location<- any_location_in(start_car);
 		
 	
-//		loop i over: road{
-//			loop j over: road{
-//				if(i.source_node = j.target_node){
-//					map<road,float> acts <- i;
-//					q[i]<-acts;
-//					write "Closest neighbour of " + self + " is " + acts;
-//				}
-//			}
-//		}
+		loop i over: intersection{
+			loop j over: intersection{
+				if(i.roads_in = j.roads_out){
+					map<intersection,float> acts <- intersection as_map (each::each = end ? 1.0 : 0.0);
+					q[i]<-acts;
+					write "Closest neighbour of " + self + " is " + acts;
+				}
+			}
+		}
 
-		
-		
+//		ask road {
+//		list<road> acts <- road at_distance 0;
+//		write "Closest neighbour of " + self + " is " + acts;
+//		}	
+//		
 		}
 
 	}
@@ -236,7 +240,7 @@ species car skills: [advanced_driving] {
 	intersection start_car <- nil;
 	intersection end_car <- nil;
 	intersection target;
-	map<road, map<road,float>> q;
+	map<intersection, map<intersection,float>> q;
 	
 	reflex time_to_go when: final_target = nil {
 //	list<intersection> end <- [ intersection[19], intersection[22],intersection[1]];
@@ -246,8 +250,13 @@ species car skills: [advanced_driving] {
 
 	reflex move when: final_target != nil {
 		
-//		map<road,float> actions <- q[start_car];
-		
+		map<intersection,float> actions <- q[start_car];
+		intersection road_new <- shuffle(actions.keys) with_max_of (actions[each]);
+		map<intersection,float> act_ <- q[start_car];
+		float val <- act_[road_new];
+		float reward <- road_new = end_car;
+		act_[road_new] <- val + 0.1 *(reward + 0.5 * max(q[road_new].values) - val);
+		start_car <- road_new;
 		do drive;
 		//if arrived at target, kill it and create a new car
 		if (final_target = nil) {
