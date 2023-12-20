@@ -102,12 +102,14 @@ global {
 		loop i over: intersection{
 			loop j over: intersection{
 				if(i.roads_in = j.roads_out){
-					map<intersection,float> acts <- intersection as_map (each::each = end ? 1.0 : 0.0);
+					map<intersection, float> acts <- intersection as_map (each::each = one_of(end) ? 1.0 : 0.0);
 					q[i]<-acts;
 					write "Closest neighbour of " + self + " is " + acts;
 				}
 			}
 		}
+
+
 
 //		ask road {
 //		list<road> acts <- road at_distance 0;
