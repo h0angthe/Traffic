@@ -27,46 +27,46 @@ global {
 		create intersection from: shape_file_nodes with: [is_traffic_signal::(read("type") = "traffic_singals")];
 
 		//create road agents using the shapefile and using the oneway column to check the orientation of the roads if there are directed
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[24],intersection[17]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[17],intersection[2]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[17],intersection[0]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[0],intersection[9]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[0],intersection[27]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[10],intersection[9]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[27],intersection[10]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[2],intersection[18]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[18],intersection[19]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[4],intersection[18]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[11],intersection[4]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[8],intersection[25]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[25],intersection[11]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[11],intersection[10]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[15],intersection[6]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[6],intersection[7]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line(reverse([intersection[29],intersection[7]])));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line(reverse([intersection[7],intersection[29]])));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[14],intersection[16]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[8],intersection[4]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[16],intersection[28]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[16],intersection[6]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[28],intersection[15]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[15],intersection[11]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[7],intersection[8]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[26],intersection[12]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[12],intersection[15]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[10],intersection[12]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[12],intersection[20]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[20],intersection[21]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[23],intersection[26]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[26],intersection[12]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[2],intersection[3]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[3],intersection[2]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[3],intersection[21]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[13],intersection[3]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[21],intersection[1]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[5],intersection[13]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[13],intersection[14]]));
-	create road with:(num_lanes:1, maxspeed: 50#km/#h, shape:line([intersection[9],intersection[22]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[24],intersection[17]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[17],intersection[2]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[17],intersection[0]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[0],intersection[9]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[0],intersection[27]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[10],intersection[9]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[27],intersection[10]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[2],intersection[18]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[18],intersection[19]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[4],intersection[18]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[11],intersection[4]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[8],intersection[25]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[25],intersection[11]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[11],intersection[10]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[15],intersection[6]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[6],intersection[7]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line(reverse([intersection[29],intersection[7]])));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line(reverse([intersection[7],intersection[29]])));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[14],intersection[16]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[8],intersection[4]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[16],intersection[28]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[16],intersection[6]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[28],intersection[15]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[15],intersection[11]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[7],intersection[8]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[26],intersection[12]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[12],intersection[15]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[10],intersection[12]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[12],intersection[20]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[20],intersection[21]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[23],intersection[26]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[26],intersection[12]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[2],intersection[3]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[3],intersection[2]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[3],intersection[21]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[13],intersection[3]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[21],intersection[1]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[5],intersection[13]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[13],intersection[14]]));
+	create road with:(num_lanes:2, maxspeed: 50#km/#h, shape:line([intersection[9],intersection[22]]));
 	
 	map general_speed_map <- road as_map (each::(each.shape.perimeter / each.maxspeed));
 	
@@ -79,11 +79,11 @@ global {
 	list<intersection> start <- intersection where (each.name="intersection5" or each.name="intersection23" or each.name="intersection29" or each.name="intersection24");
 	list<intersection> end <- intersection where (each.name="intersection5" or each.name="intersection19" or each.name="intersection22" or each.name="intersection1");
 	
-		create car number: num_car with:(target :one_of(end)) {
+		create car number: 1 with:(target: intersection[22]) {
 		vehicle_length <- 3.8 #m;
 		//car occupies 2 lanes
 		num_lanes_occupied <-1;
-		max_speed <-150 #km / #h;
+		max_speed <-40 #km / #h;
 		max_acceleration <- 5 / 3.6;
 				
 		right_side_driving <- true;
@@ -103,7 +103,59 @@ global {
 		
 		start_car <- one_of(start);
 		end_car <- one_of(end);
-		location<- any_location_in(start_car);
+		location<- intersection[5].location;
+		}
+		create car number: 1 with:(target: intersection[19]) {
+		vehicle_length <- 3.8 #m;
+		//car occupies 2 lanes
+		num_lanes_occupied <-1;
+		max_speed <-40 #km / #h;
+		max_acceleration <- 5 / 3.6;
+				
+		right_side_driving <- true;
+		proba_lane_change_up <- 0.1 + (rnd(500) / 500);
+		proba_lane_change_down <- 0.5 + (rnd(500) / 500);		
+		proba_block_node <- 0.0;
+		proba_respect_priorities <- 1.0 - rnd(200 / 1000);
+		proba_respect_stops <- [1.0];
+		proba_use_linked_road <- 0.0;
+		security_distance_coeff <- 5 / 9 * 3.6 * (1.5 - rnd(1000) / 1000);
+		speed_coeff <- 1.2 - (rnd(400) / 1000);
+		
+//		proba_lane_change_up <-1.0;
+		
+		lane_change_limit <- 2;
+		linked_lane_limit <- 0;
+		
+		start_car <- one_of(start);
+		end_car <- one_of(end);
+		location<- intersection[5].location;
+		}
+		create car number: 2 with:(target: intersection[22]) {
+		vehicle_length <- 3.8 #m;
+		//car occupies 2 lanes
+		num_lanes_occupied <-1;
+		max_speed <-80 #km / #h;
+		max_acceleration <- 5 / 3.6;
+				
+		right_side_driving <- true;
+		proba_lane_change_up <- 0.1 + (rnd(500) / 500);
+		proba_lane_change_down <- 0.5 + (rnd(500) / 500);		
+		proba_block_node <- 0.0;
+		proba_respect_priorities <- 1.0 - rnd(200 / 1000);
+		proba_respect_stops <- [1.0];
+		proba_use_linked_road <- 0.0;
+		security_distance_coeff <- 5 / 9 * 3.6 * (1.5 - rnd(1000) / 1000);
+		speed_coeff <- 1.2 - (rnd(400) / 1000);
+		
+//		proba_lane_change_up <-1.0;
+		
+		lane_change_limit <- 2;
+		linked_lane_limit <- 0;
+		
+		start_car <- one_of(start);
+		end_car <- one_of(end);
+		location<- intersection[5].location;
 		}
 //		create car number: 10 with: (location: intersection[5].location, target: intersection[29]);
 //		create car number: 10 with: (location: intersection[5].location, target: intersection[22]);
@@ -222,7 +274,6 @@ species car skills: [advanced_driving] {
 	}
 
 	reflex move when: final_target != nil {
-		
 		do drive;
 		//if arrived at target, kill it and create a new car
 		if (final_target = nil) {

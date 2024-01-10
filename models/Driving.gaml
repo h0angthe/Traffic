@@ -6,30 +6,39 @@
 
 * Tags: simple_bdi, emotion, evacuation
 */
- 
 model Driving
 
 global {
-	bool display3D<- false;
+	bool display3D <- false;
 	file shape_file_roads <- file("../includes/HNTraffic/HanoiRoads.shp");
 	file shape_file_nodes <- file("../includes/HNTraffic/HanoiNodes.shp");
-	
 	geometry shape <- envelope(shape_file_roads) + 50.0;
-	
 	graph road_network;
-	int num_car <- 100;
+	int num_car <- 200;
 	float lane_width <- 2.0;
 	list<intersection> end;
+	//	list<road> road_end;
+	list<car> carS;
+	float car_ahead;
+	float c_car;
+	float distanceAB;
+	float e <- 0.5;
+	float learning_rate <- 0.1;
+	float discount_factor <- 0.5;
+	int s;
+
 	init {
 	//create the intersection and check if there are traffic lights or not by looking the values inside the type column of the shapefile and linking
 	// this column to the attribute is_traffic_signal. 
-		create intersection from: shape_file_nodes with: [is_traffic_signal::(read("type") = "traffic_signals")];
+		create intersection from: shape_file_nodes with: [is_traffic_signal::(read("type") = "traffic_signals")] {
+		//		list<intersection> acts <- intersection at_distance 0;	
+		}
 
 		//create road agents using the shapefile and using the oneway column to check the orientation of the roads if there are directed
 		create road from: shape_file_roads with: [lanes::int(read("lanes")), oneway::string(read("oneway"))] {
-			road_near <- road where (self != self);
+			road_near <- road at_distance 0;
 			geom_display <- shape + (2.5 * lanes);
-			maxspeed <- (lanes = 1 ? 30.0 : (lanes = 2 ? 50.0 : 70.0)) °km / °h;
+			maxspeed <- (lanes = 1 ? 40.0 : (lanes = 2 ? 50.0 : 70.0)) °km / °h;
 			switch oneway {
 				match "no" {
 					create road {
@@ -43,19 +52,12 @@ global {
 
 					lanes <- int(lanes / 2.0 + 0.5);
 				}
+
 				match "-1" {
 					shape <- polyline(reverse(shape.points));
 				}
 
 			}
-//			loop i over: road{
-//			loop j over: road{
-//				if(i.source_node = j.target_node){
-//					list<road> acts1 <- i;
-//					write "Closest neighbour of " + self + " is " + acts1;
-//				}
-//			}
-//		}
 
 		}
 
@@ -68,66 +70,39 @@ global {
 		ask intersection {
 			do initialize;
 		}
-		
-		list<intersection> start <- intersection where (each.name="intersection15" or each.name="intersection52" or each.name="intersection89");
-		 end <- intersection where (each.name="intersection31" or each.name="intersection43" or each.name="intersection20" or each.name="intersection19");
-	
-		create car number: num_car with:(target :one_of(end)) {
-		vehicle_length <- 3.8 #m;
-		//car occupies 2 lanes
-		num_lanes_occupied <-1;
-		max_speed <-150 #km / #h;
-		max_acceleration <- 5 / 3.6;
-				
-		right_side_driving <- true;
-		proba_lane_change_up <- 0.1 + (rnd(500) / 500);
-		proba_lane_change_down <- 0.5 + (rnd(500) / 500);		
-		proba_block_node <- 0.0;
-		proba_respect_priorities <- 1.0 - rnd(200 / 1000);
-		proba_respect_stops <- [1.0];
-		proba_use_linked_road <- 0.0;
-		security_distance_coeff <- 5 / 9 * 3.6 * (1.5 - rnd(1000) / 1000);
-		speed_coeff <- 1.2 - (rnd(400) / 1000);
-		
-//		proba_lane_change_up <-1.0;
-		
-		lane_change_limit <- 2;
-		linked_lane_limit <- 0;
-		
-		start_car <- one_of(start);
-		end_car <- one_of(end);
-		location<- any_location_in(start_car);
-		
-	
-		loop i over: intersection{
-			loop j over: intersection{
-				if(i.roads_in = j.roads_out){
-					map<intersection, float> acts <- intersection as_map (each::each = one_of(end) ? 1.0 : 0.0);
-					q[i]<-acts;
-					write "Closest neighbour of " + self + " is " + acts;
-				}
+
+		list<intersection> start <- intersection where (each.name = "intersection15" or each.name = "intersection52" or each.name = "intersection89");
+		end <- intersection where (each.name = "intersection31" or each.name = "intersection43" or each.name = "intersection20" or each.name = "intersection19");
+		//		road_end <- road where (each.target_node = one_of(end));
+		create car number: num_car with: (target: one_of(end)) {
+			vehicle_length <- 3.8 #m;
+			//car occupies 2 lanes
+			num_lanes_occupied <- 1;
+			max_speed <- 150 #km / #h;
+			max_acceleration <- 5 / 3.6;
+			right_side_driving <- true;
+			proba_lane_change_up <- 0.1 + (rnd(500) / 500);
+			proba_lane_change_down <- 0.5 + (rnd(500) / 500);
+			proba_block_node <- 0.0;
+			proba_respect_priorities <- 1.0 - rnd(200 / 1000);
+			proba_respect_stops <- [1.0];
+			proba_use_linked_road <- 0.0;
+			security_distance_coeff <- 5 / 9 * 3.6 * (1.5 - rnd(1000) / 1000);
+			speed_coeff <- 1.2 - (rnd(400) / 1000);
+
+			//		proba_lane_change_up <-1.0;
+			lane_change_limit <- 2;
+			linked_lane_limit <- 0;
+			start_car <- one_of(start);
+			end_car <- one_of(end);
+			loop i over: car {
+				map<int, int> q0 <- [0::0,0::1,0::2];
+				q[i] <- q0;
+				//				write "q: " + q;
 			}
-		}
 
+		} } }
 
-
-//		ask road {
-//		list<road> acts <- road at_distance 0;
-//		write "Closest neighbour of " + self + " is " + acts;
-//		}	
-//		
-		}
-
-	}
-//	reflex find_road_near {
-//		ask road {
-//		list<road> acts <- road at_distance 0;
-//		write "Closest neighbour of " + self + " is " + acts;
-//		}
-//
-//	}
-
-}
 species intersection skills: [skill_road_node] {
 	bool is_traffic_signal;
 	list<list> stop;
@@ -210,12 +185,16 @@ species intersection skills: [skill_road_node] {
 				draw box(1, 1, 10) color: #black;
 				draw sphere(3) at: {location.x, location.y, 10} color: color_fire;
 			}
+
 		} else {
 			if (is_traffic_signal) {
 				draw circle(5) color: color_fire;
 			}
-		}	
+
+		}
+
 	}
+
 }
 
 //species that will represent the roads, it can be directed or not and uses the skill skill_road
@@ -231,7 +210,7 @@ species road skills: [skill_road] {
 		} else {
 			draw shape color: #white end_arrow: 5;
 		}
-		
+
 	}
 
 }
@@ -242,57 +221,92 @@ species car skills: [advanced_driving] {
 	intersection start_car <- nil;
 	intersection end_car <- nil;
 	intersection target;
-	map<intersection, map<intersection,float>> q;
-	
+	car current_car;
+	car car_ahead;
+	map<car, map<int, int>> q;
+
 	reflex time_to_go when: final_target = nil {
-//	list<intersection> end <- [ intersection[19], intersection[22],intersection[1]];
-	do compute_path graph: road_network target: target;
+	//	list<intersection> end <- [ intersection[19], intersection[22],intersection[1]];
+		do compute_path graph: road_network target: target;
 	
 	}
 
 	reflex move when: final_target != nil {
-		
-		map<intersection,float> actions <- q[start_car];
-		intersection road_new <- shuffle(actions.keys) with_max_of (actions[each]);
-		map<intersection,float> act_ <- q[start_car];
-		float val <- act_[road_new];
-		float reward <- road_new = end_car;
-		act_[road_new] <- val + 0.1 *(reward + 0.5 * max(q[road_new].values) - val);
-		start_car <- road_new;
 		do drive;
+		
+		if (self.follower != nil) {
+			list<car> car_1 <- (car where (each.name =self.follower.name));
+			current_car <- car_1[0] = nil ? nil : car_1[0];
+			car_ahead <- self;
+//			write "car_ahead" + car_ahead + " current_car: " + current_car;
+			float speed_carahead <- car_ahead.real_speed;
+			float speed_currentcar <- current_car.real_speed;
+			distanceAB <- current_car distance_to car_ahead;
+			s <- int(distanceAB * 42 * 42 + speed_currentcar * 42 + speed_carahead);
+//			write "speed car ahaed " + speed_carahead +" speed car curent: " + speed_currentcar + "AB: " + distanceAB + "s: "+s; 
+			loop i over: car{
+				if(i.name = current_car.name){
+					map<int,int> qs <- [0::s,1::s,2::s];
+					q[i] <- qs;
+				}
+			map<int, int> actc <- q[i];
+			write q[i];
+			float e_r <- rnd(1.0);
+			if (e_r > e) {
+				int maxA <- shuffle(actc.values) with_max_of (actc[each]);
+//				if(maxA = 2){i.speed <- i.speed + 1 * i.max_acceleration / 41 #km /#h;}
+//				if(maxA = 0){i.speed <- i.speed -  1 *i.acceleration / 41 #km /#h;}
+			} else {
+				int rnd_action <- one_of(actc.values);
+				if(rnd_action = 2){i.speed <- i.speed + 1 * i.max_acceleration / 41 #km /#h;}
+//				if(rnd_action = 0){i.speed <- i.speed - 1  #km /#h;}
+				//			car1 <- actc[rnd_action];
+				//			write "rnd" + rnd_action;
+			}
+			}
+			}
+//			write "q: " + q;
+				
+//				float reward <- ln(real_speed + 0.000000001) ;
+
+		//		qsa[car1] <- qsa[car1] + learning_rate * ( reward + discount_factor * max(q[car1].values ) - qsa[car1]) ;
+
+
 		//if arrived at target, kill it and create a new car
 		if (final_target = nil) {
 			do unregister;
-			do die;
+			location <- one_of(start_car).location;
+			//			do die;
+
 		}
+
 	}
 
 	point compute_position {
 		if (current_road != nil) {
-			float dist <- (road(current_road).num_lanes - current_lane -
-				mean(range(num_lanes_occupied - 1)) - 0.5) * lane_width;
+			float dist <- (road(current_road).num_lanes - current_lane - mean(range(num_lanes_occupied - 1)) - 0.5) * lane_width;
 			if violating_oneway {
 				dist <- -dist;
 			}
-		 	point shift_pt <- {cos(heading + 90) * dist, sin(heading + 90) * dist};	
-		
+
+			point shift_pt <- {cos(heading + 90) * dist, sin(heading + 90) * dist};
 			return location + shift_pt;
 		} else {
 			return {0, 0};
 		}
+
 	}
-	
-	
+
 	aspect default {
 		if (current_road != nil) {
 			point pos <- compute_position();
-				draw rectangle(vehicle_length, lane_width * num_lanes_occupied) 
-				at: pos color: color rotate: heading border: #black;
-			draw triangle(lane_width * num_lanes_occupied) 
-				at: pos color: #white rotate: heading + 90 ;
+			draw rectangle(vehicle_length, lane_width * num_lanes_occupied) at: pos color: color rotate: heading border: #black;
+			draw triangle(lane_width * num_lanes_occupied) at: pos color: #white rotate: heading + 90;
 		}
+
 	}
- }
+
+}
 
 experiment HanoiCity type: gui {
 //	parameter "if true, 3D display, if false 2D display:" var: display3D category: "GIS";
@@ -306,10 +320,11 @@ experiment HanoiCity type: gui {
 //	}
 	output synchronized: true {
 		display city type: 3d background: #gray {
-			species road ;
-			species intersection ;
-			species car ;
+			species road;
+			species intersection;
+			species car;
 		}
+
 	}
 
 }
