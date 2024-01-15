@@ -248,46 +248,46 @@ species car skills: [driving] {
 
 	reflex move when: final_target != nil {
 			
-//			map<int,int> s0 <- [0::0,1::0,2::0];
-//			if(q[num0] = nil){q[num0] <- s0;}
-//			map<int, int> actc <- q[num0];
-//			float e_r <- rnd(1.0);
-//			if (e_r > e) {
-//				
-//				numA <- actc.keys with_max_of (actc[each]);
-//			} else {
-//				numA <- one_of(actc.keys);
-//			}
-//		
-//			if(numA = 2){self.real_speed <- self.real_speed + 1 * self.max_acceleration / 41 ;}
-//			if(numA = 0 and self.real_speed > 1){self.real_speed <- self.real_speed *0.9  ;}
-//			
-//		if (self.follower != nil) {
-//			list<car> car_1 <- (car where (each.name =self.follower.name));
-//			current_car <- car_1[0] = nil ? nil : car_1[0];
-//			car_ahead <- self;
-////			write "car_ahead" + car_ahead + " current_car: " + current_car;
-//			float speed_carahead <- car_ahead.real_speed;
-//			float speed_currentcar <- current_car.real_speed;
-//			distanceAB <- current_car distance_to car_ahead;
-//			s <- int(distanceAB * 42 * 42 + speed_currentcar * 42 + speed_carahead);
-////			write "speed car ahaed " + speed_carahead +" speed car curent: " + speed_currentcar + "AB: " + distanceAB + "s: "+s; 
-//			map<int,int> s1 <- [0::0,1::0,2::0];
-//			if(q[s] = nil){q[s] <- s1;}
-////			write "AB: " + distanceAB + "s; "+s;
-//			}
-////			map<int, int> maxs1 <- q[s];
-////			int maxqs <- max(maxs1.values);
-//			
-//			map<int, int> qs0 <- q[num0];
-//			
-//			int val <- qs0[num0];
-//				
-//			float reward <- ln(real_speed + 0.000000001) ;
-//			
-//			qs0[num0] <- val + learning_rate * ( reward + discount_factor * max(q[s].values) - val) ;
-//			
-//			num0 <- s;
+			map<int,int> s0 <- [0::0,1::0,2::0];
+			if(q[num0] = nil){q[num0] <- s0;}
+			map<int, int> actc <- q[num0];
+			float e_r <- rnd(1.0);
+			if (e_r > e) {
+				
+				numA <- actc.keys with_max_of (actc[each]);
+			} else {
+				numA <- one_of(actc.keys);
+			}
+		
+			if(numA = 2){self.real_speed <- self.real_speed + 1 * self.max_acceleration / 41 ;}
+			if(numA = 0 and self.real_speed > 1){self.real_speed <- self.real_speed *0.9  ;}
+			
+		if (self.follower != nil) {
+			list<car> car_1 <- (car where (each.name =self.follower.name));
+			current_car <- car_1[0] = nil ? nil : car_1[0];
+			car_ahead <- self;
+//			write "car_ahead" + car_ahead + " current_car: " + current_car;
+			float speed_carahead <- car_ahead.real_speed;
+			float speed_currentcar <- current_car.real_speed;
+			distanceAB <- current_car distance_to car_ahead;
+			s <- int(distanceAB * 42 * 42 + speed_currentcar * 42 + speed_carahead);
+//			write "speed car ahaed " + speed_carahead +" speed car curent: " + speed_currentcar + "AB: " + distanceAB + "s: "+s; 
+			map<int,int> s1 <- [0::0,1::0,2::0];
+			if(q[s] = nil){q[s] <- s1;}
+//			write "AB: " + distanceAB + "s; "+s;
+			}
+//			map<int, int> maxs1 <- q[s];
+//			int maxqs <- max(maxs1.values);
+			
+			map<int, int> qs0 <- q[num0];
+			
+			int val <- qs0[num0];
+				
+			float reward <- ln(real_speed + 0.000000001) ;
+			
+			qs0[num0] <- val + learning_rate * ( reward + discount_factor * max(q[s].values) - val) ;
+			
+			num0 <- s;
 			
 //			write qs0;
 		
